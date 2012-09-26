@@ -23,22 +23,29 @@ def random_mincut(g):
 		g.delete_vertices(chosen_edge_target)
 	return g.ecount()
 
-number_of_vertices = 10
+def find_mincut(graph):
+	number_of_vertices = graph.vcount()
+	best_mincut_value = graph.ecount() + 1 # borne superieure
+	nbr_iter = int(number_of_vertices*(number_of_vertices-1)*math.log(number_of_vertices))
+	print "number of iterations : ", int(nbr_iter)
+	for i in range(nbr_iter):
+		g_temp = g.copy()
+		result = random_mincut(g_temp)
+		if (result < best_mincut_value):
+			best_mincut_value = result
+			print "iter : ", i, "improved to : ", best_mincut_value
 
-g = Graph.GRG(number_of_vertices, 0.5)
+	print "best mincut found : ", best_mincut_value
+
+	print "mincut was : ", g.mincut()	
+
+number_of_vertices = 15
+GRG_radius = 0.8
+g = Graph.GRG(number_of_vertices, GRG_radius)
+graph_build_counter = 0
 while (g.cohesion() == 0):
-	g = Graph.GRG(number_of_vertices,0.5)
+	graph_build_counter += 1
+	g = Graph.GRG(number_of_vertices,GRG_radius)
+print "found connex graph after ", graph_build_counter, " tries."
 
-proposed_mincut_value = 9999
-nbr_iter = number_of_vertices*(number_of_vertices-1)*math.log(number_of_vertices)
-print "number of iterations : ", int(nbr_iter)
-for i in range(int(nbr_iter)):
-	g_temp = g.copy()
-	temp_proposed_mincut_value = random_mincut(g_temp)
-	if (temp_proposed_mincut_value < proposed_mincut_value):
-		proposed_mincut_value = temp_proposed_mincut_value
-		print "iter : ", i, "improved to : ", proposed_mincut_value
-
-print "random_mincut found : ", proposed_mincut_value
-
-print "true value : ", g.mincut()
+find_mincut(g)
