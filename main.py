@@ -7,9 +7,11 @@ import random
 
 # Generation : http://igraph.sourceforge.net/doc/python/igraph.GraphBase-class.html
 
-g = Graph.GRG(10, 0.5)
+g = Graph.GRG(20, 0.5)
 assert(g.cohesion() > 0)
 #print(g.get_edgelist())
+
+g_backup = g.copy()
 
 while (g.vcount() > 2):
 	print ""
@@ -34,4 +36,4 @@ while (g.vcount() > 2):
 
 print g
 
-print g.mincut()
+print g_backup.mincut()
