@@ -39,13 +39,14 @@ def find_mincut(graph):
 
 	print "mincut was : ", g.mincut()	
 
-number_of_vertices = 15
-GRG_radius = 0.8
-g = Graph.GRG(number_of_vertices, GRG_radius)
-graph_build_counter = 0
-while (g.cohesion() == 0):
-	graph_build_counter += 1
-	g = Graph.GRG(number_of_vertices,GRG_radius)
-print "found connex graph after ", graph_build_counter, " tries."
+def generate_random_graph(number_of_vertices, GRG_radius):
+	g = Graph.GRG(number_of_vertices, GRG_radius)
+	graph_build_counter = 0
+	while (g.cohesion() == 0):
+		graph_build_counter += 1
+		g = Graph.GRG(number_of_vertices,GRG_radius)
+	print "found connex graph after ", graph_build_counter, " tries."
+	return g
 
+g = generate_random_graph(15,0.8)
 find_mincut(g)
