@@ -3,6 +3,28 @@ from igraph import *
 import random
 import math
 
+class TestResult:
+	def __init__(self, graph, number_of_iterations):
+		self.number_of_vertices = graph.vcount()
+		self.number_of_edges = graph.ecount()
+		self.number_of_iterations = number_of_iterations
+		self.improving_iterations = []
+		self.improved_value = []
+		self.found_value = None
+		self.correct_value = None
+
+	def __str__(self):
+		assert(len(self.improving_iterations) == len(self.improved_value))
+		assert(self.found_value != None)
+		assert(self.correct_value != None)
+		reprString = "Test with a graph of " + str(self.number_of_vertices) + " verticles and " + str(self.number_of_edges) + " edges.\n"
+		reprString += "Used " + str(self.number_of_iterations) + " iterations.\n"
+		for i in range(len(self.improving_iterations)):
+			reprString += "Found value :\t" + str(self.improved_value[i]) + "\tat iteration\t" + str(self.improving_iterations[i]) + "\n" 
+		reprString += "Final value :\t" + str(self.found_value) + "\n"
+		reprString += "Correct value :\t" + str(self.correct_value) + "\n"
+		return reprString
+
 def random_mincut(g):
 	while (g.vcount() > 2):
 		edge_list = g.get_edgelist()
@@ -27,19 +49,20 @@ def find_mincut(graph):
 	number_of_vertices = graph.vcount()
 	best_mincut_value = graph.ecount() + 1 # borne superieure
 	nbr_iter = int(number_of_vertices*(number_of_vertices-1)*math.log(number_of_vertices))
-	print "number of iterations : ", int(nbr_iter)
+	myTestResult = TestResult(graph, nbr_iter)
 	for i in range(nbr_iter):
 		g_temp = g.copy()
 		result = random_mincut(g_temp)
 		if (result < best_mincut_value):
 			best_mincut_value = result
-			print "iter : ", i, "improved to : ", best_mincut_value
+			myTestResult.improving_iterations.append(i)
+			myTestResult.improved_value.append(best_mincut_value)
 
-	print "best mincut found : ", best_mincut_value
+	myTestResult.found_value = best_mincut_value
+	myTestResult.correct_value = int(g.mincut().value)
+	return myTestResult
 
-	print "mincut was : ", g.mincut()	
-
-def generate_random_graph(number_of_vertices, GRG_radius):
+def generate_random_connex_graph(number_of_vertices, GRG_radius):
 	g = Graph.GRG(number_of_vertices, GRG_radius)
 	graph_build_counter = 0
 	while (g.cohesion() == 0):
@@ -48,5 +71,19 @@ def generate_random_graph(number_of_vertices, GRG_radius):
 	print "found connex graph after ", graph_build_counter, " tries."
 	return g
 
-g = generate_random_graph(15,0.8)
-find_mincut(g)
+testResults = []
+for i in range(10):
+	g = generate_random_connex_graph(15,0.8)
+	result = find_mincut(g)
+	testResults.append(result)
+	#print(result)
+
+# compute some statistics on testResults
+currentSum = 0
+for tr in testResults:
+	number_of_correction = len(tr.improving_iterations)
+	last_useful_iteration = tr.improving_iterations[number_of_correction-1]
+	proportion_of_useful_work = last_useful_iteration/float(tr.number_of_iterations)
+	currentSum += proportion_of_useful_work
+average = currentSum/len(testResults)
+print "prop of useful work :\t" + str(average)
