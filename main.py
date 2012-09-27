@@ -3,11 +3,17 @@ from igraph import *
 import random
 import math
 
+random.seed()
+
+NUMBER_OF_TESTS = 1000
+CONFIDENCE_FACTOR = 5
+REMOVE_FAILED_TESTS_IN_STATS = False
+
 class TestResult:
-	def __init__(self, graph, number_of_iterations):
+	def __init__(self, graph):
 		self.number_of_vertices = graph.vcount()
 		self.number_of_edges = graph.ecount()
-		self.number_of_iterations = number_of_iterations
+		self.number_of_iterations = None
 		self.improving_iterations = []
 		self.improved_value = []
 		self.found_value = None
@@ -45,11 +51,12 @@ def random_mincut(g):
 		g.delete_vertices(chosen_edge_target)
 	return g.ecount()
 
-def find_mincut(graph):
+def find_mincut(graph, myTestResult):
 	number_of_vertices = graph.vcount()
 	best_mincut_value = graph.ecount() + 1 # borne superieure
-	nbr_iter = int(number_of_vertices*(number_of_vertices-1)*math.log(number_of_vertices))
-	myTestResult = TestResult(graph, nbr_iter)
+	required_nbr_iter = int(number_of_vertices*(number_of_vertices-1)*math.log(number_of_vertices))
+	nbr_iter = required_nbr_iter/CONFIDENCE_FACTOR
+	myTestResult.number_of_iterations = nbr_iter
 	for i in range(nbr_iter):
 		g_temp = g.copy()
 		result = random_mincut(g_temp)
@@ -64,26 +71,50 @@ def find_mincut(graph):
 
 def generate_random_connex_graph(number_of_vertices, GRG_radius):
 	g = Graph.GRG(number_of_vertices, GRG_radius)
-	graph_build_counter = 0
 	while (g.cohesion() == 0):
-		graph_build_counter += 1
 		g = Graph.GRG(number_of_vertices,GRG_radius)
-	print "found connex graph after ", graph_build_counter, " tries."
 	return g
 
 testResults = []
-for i in range(10):
-	g = generate_random_connex_graph(15,0.8)
-	result = find_mincut(g)
+for i in range(NUMBER_OF_TESTS):
+	number_of_vertices = random.randint(4,12)
+	GRG_radius = random.randint(5,9)/float(10)
+	if (NUMBER_OF_TESTS < 1000 or ((i+1)%(NUMBER_OF_TESTS/100)) == 0): print "test number " + str(i+1) + " of " + str(NUMBER_OF_TESTS) + " (" + str(number_of_vertices) + "," + str(GRG_radius) + ")..."
+	g = generate_random_connex_graph(number_of_vertices, GRG_radius)
+	result = TestResult(g)
+	find_mincut(g, result)
 	testResults.append(result)
 	#print(result)
 
+def strRound2(aFloat):
+	return str(round(aFloat,2))
+
 # compute some statistics on testResults
-currentSum = 0
+current_prop_sum = 0
+current_failure_sum = 0
+current_max_useful = 0
+current_max_useful_2 = 0
+current_max_useful_3 = 0
 for tr in testResults:
+	#failure count
+	if(tr.found_value != tr.correct_value):
+		current_failure_sum += 1
+		if (REMOVE_FAILED_TESTS_IN_STATS):
+			continue
+	# max useful
 	number_of_correction = len(tr.improving_iterations)
-	last_useful_iteration = tr.improving_iterations[number_of_correction-1]
-	proportion_of_useful_work = last_useful_iteration/float(tr.number_of_iterations)
-	currentSum += proportion_of_useful_work
-average = currentSum/len(testResults)
-print "prop of useful work :\t" + str(average)
+	last_useful_iteration_abs = tr.improving_iterations[number_of_correction-1]
+	last_useful_iteration_rel = last_useful_iteration_abs / float(tr.number_of_iterations)
+	if (last_useful_iteration_rel > current_max_useful):
+		current_max_useful_3 = current_max_useful_2
+		current_max_useful_2 = current_max_useful
+		current_max_useful = last_useful_iteration_rel
+	# proportion of useful work
+	proportion_of_useful_work = last_useful_iteration_abs/float(tr.number_of_iterations)
+	current_prop_sum += proportion_of_useful_work
+prop_average = current_prop_sum/len(testResults)
+print "-----------------------------------------------------------"
+print "confidence factor: " + str(CONFIDENCE_FACTOR)
+print "failures : " + str(current_failure_sum) + " = " + strRound2(current_failure_sum/float(NUMBER_OF_TESTS)) + "% of tests (removed from following stats)"
+print "Three biggest useful iteration # (relative to total #iter) : " + strRound2(current_max_useful) + ", " + strRound2(current_max_useful_2) + ", " + strRound2(current_max_useful_3)
+print "prop of useful work : " + strRound2(prop_average) + " (" + strRound2(prop_average/CONFIDENCE_FACTOR) + " without confidence factor)"
