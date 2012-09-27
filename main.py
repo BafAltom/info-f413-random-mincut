@@ -6,11 +6,13 @@ import math
 random.seed()
 
 NUMBER_OF_TESTS = 1000
-CONFIDENCE_FACTOR = 5
+CONFIDENCE_FACTOR = 5 # nice value : 5
 REMOVE_FAILED_TESTS_IN_STATS = False
+DISPLAY_FAILURES = False
 
 class TestResult:
 	def __init__(self, graph):
+		#self.graph = graph
 		self.number_of_vertices = graph.vcount()
 		self.number_of_edges = graph.ecount()
 		self.number_of_iterations = None
@@ -23,13 +25,13 @@ class TestResult:
 		assert(len(self.improving_iterations) == len(self.improved_value))
 		assert(self.found_value != None)
 		assert(self.correct_value != None)
-		reprString = "Test with a graph of " + str(self.number_of_vertices) + " verticles and " + str(self.number_of_edges) + " edges.\n"
-		reprString += "Used " + str(self.number_of_iterations) + " iterations.\n"
+		s = "Test with a graph of " + str(self.number_of_vertices) + " verticles and " + str(self.number_of_edges) + " edges.\n"
+		s += "Used " + str(self.number_of_iterations) + " iterations.\n"
 		for i in range(len(self.improving_iterations)):
-			reprString += "Found value :\t" + str(self.improved_value[i]) + "\tat iteration\t" + str(self.improving_iterations[i]) + "\n" 
-		reprString += "Final value :\t" + str(self.found_value) + "\n"
-		reprString += "Correct value :\t" + str(self.correct_value) + "\n"
-		return reprString
+			s += "- Found value : " + str(self.improved_value[i]) + " at iteration " + str(self.improving_iterations[i]) + "\n"
+		s += "Final value : " + str(self.found_value) + "\n"
+		s += "Correct value : " + str(self.correct_value) + "\n"
+		return s
 
 def random_mincut(g):
 	while (g.vcount() > 2):
@@ -77,14 +79,14 @@ def generate_random_connex_graph(number_of_vertices, GRG_radius):
 
 testResults = []
 for i in range(NUMBER_OF_TESTS):
-	number_of_vertices = random.randint(4,12)
-	GRG_radius = random.randint(5,9)/float(10)
-	if (NUMBER_OF_TESTS < 1000 or ((i+1)%(NUMBER_OF_TESTS/100)) == 0): print "test number " + str(i+1) + " of " + str(NUMBER_OF_TESTS) + " (" + str(number_of_vertices) + "," + str(GRG_radius) + ")..."
+	number_of_vertices = random.randint(5,10)
+	GRG_radius = random.randint(40,90)/float(100)
+	if (NUMBER_OF_TESTS < 1000): print "test " + str(i+1) + " of " + str(NUMBER_OF_TESTS) + "..."
+	elif(((i+1)%(NUMBER_OF_TESTS/10)) == 0): print "test " + str(i+1) + " of " + str(NUMBER_OF_TESTS) + "..."
 	g = generate_random_connex_graph(number_of_vertices, GRG_radius)
 	result = TestResult(g)
 	find_mincut(g, result)
 	testResults.append(result)
-	#print(result)
 
 def strRound2(aFloat):
 	return str(round(aFloat,2))
@@ -92,13 +94,19 @@ def strRound2(aFloat):
 # compute some statistics on testResults
 current_prop_sum = 0
 current_failure_sum = 0
+current_failure_value = 0
 current_max_useful = 0
 current_max_useful_2 = 0
 current_max_useful_3 = 0
 for tr in testResults:
-	#failure count
+	#failure count and value
 	if(tr.found_value != tr.correct_value):
+		if (DISPLAY_FAILURES):
+			print "-----------------------------------------------------------"
+			print "Failure :"
+			print tr
 		current_failure_sum += 1
+		current_failure_value += tr.found_value - tr.correct_value
 		if (REMOVE_FAILED_TESTS_IN_STATS):
 			continue
 	# max useful
@@ -115,6 +123,6 @@ for tr in testResults:
 prop_average = current_prop_sum/len(testResults)
 print "-----------------------------------------------------------"
 print "confidence factor: " + str(CONFIDENCE_FACTOR)
-print "failures : " + str(current_failure_sum) + " = " + strRound2(current_failure_sum/float(NUMBER_OF_TESTS)) + "% of tests (removed from following stats)"
+print "failures : " + str(current_failure_sum) + " = " + strRound2(current_failure_sum/float(NUMBER_OF_TESTS)) + "% of tests with an average of " + strRound2(current_failure_value/float(current_failure_sum)) + " absolute error (failures were removed from following stats)"
 print "Three biggest useful iteration # (relative to total #iter) : " + strRound2(current_max_useful) + ", " + strRound2(current_max_useful_2) + ", " + strRound2(current_max_useful_3)
-print "prop of useful work : " + strRound2(prop_average) + " (" + strRound2(prop_average/CONFIDENCE_FACTOR) + " without confidence factor)"
+print "Proportion of useful work : " + strRound2(prop_average) + " (" + strRound2(prop_average/CONFIDENCE_FACTOR) + " without confidence factor)"
