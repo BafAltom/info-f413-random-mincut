@@ -39,7 +39,7 @@ Cette borne inférieure peut être améliorée jusqu'à
 \begin{math} 1- \frac{1}{n^{2}} \end{math} en exécutant
 \begin{math} n(n-1)\log{n} \end{math} itérations de l'algorithme et en gardant le meilleur résultat (la plus petite valeur trouvée).\\
 
-Ce document présente une implémentation de l'algorithme en Python et tente de vérifier les valeurs trouvées au cours.\\
+Ce document présente une implémentation de l'algorithme en Python et l'utilise pour discuter les valeurs trouvées au cours.\\
 
 \section{Implémentation}
 
@@ -60,7 +60,7 @@ et toutes les arêtes ayant la même source et la même destination que A (donc 
 \fontfamily{pcr}
 \begin{lstlisting}[language=Python]
 # g is an instance of Graph()
-while (graph.vcount() > 2):
+while (g.vcount() > 2):
 	edge_list = g.get_edgelist()
 	rand_edge_id = random.randint(0,g.ecount()-1)
 	chosen_edge = edge_list[rand_edge_id]
@@ -85,7 +85,7 @@ On a choisi de faire par défaut le nombre d'itérations trouvé en cours pour a
 \begin{math} 1-\frac{1}{n^{2}} \end{math}
 mais celui-ci peut être contrôlé en modifiant le paramètre
 \begin{it}CONFIDENCE\_FACTOR\end{it}
-pour faire moins d'itérations (plus grand facteur de confiance) ou plus (plus petit).
+pour faire moins d'itérations (facteur de confiance \begin{math}> 1\end{math}) ou plus (\begin{math}< 1\end{math}).
 
 \fontfamily{pcr}
 \begin{lstlisting}
@@ -137,7 +137,7 @@ générés :
  \item Nombre de tests échoués (où une valeur trop grande a été trouvée pour la coupe minimale).
  \item Écart moyen avec la véritable valeur de coupe minimale.
  \item Proportions d'itérations ``inutiles'' (lorsque la valeur exacte avait déjà été trouvée)
- \item Itération ``utile'' la plus lointaine
+ \item Itérations ``utiles'' les plus lointaines
 \end{itemize}
 
 Ces résultats sont ensuite affichés de la manière suivante :
@@ -215,7 +215,7 @@ On a maintenant une majorité de résultats erronés (ce qui était attendu vu l
 \end{itemize}
 
 
-\section{Annexe}
+\section{Annexes}
 \subsection{Génération aléatoire de graphes}
 
 Pour avoir des résultats significatifs, il nous a semblé préférable de tester l'algorithme avec des graphes générés aléatoirement plutôt qu'avec des ``cas particuliers'' codés en dur dans le code.\\
@@ -232,9 +232,20 @@ valeur avec une probabilité de 1. Il a donc été choisi de détecter les graph
 
 Au cours, on a calculé que l'algorithme de Karger avait une complexité en \begin{math}O(n^{4})\end{math}, il convient donc de choisir un \begin{it}n\end{it} d'une taille raisonnable. Sur notre matériel et pour des séries de 1000 tests, 10 sommets semblent être une borne maximale pour avoir un temps de calcul viable.\\
 Le choix de \begin{it}r\end{it}, qui modifiera surtout le nombre d'arêtes du graphe, semblait avoir moins d'importance sur le temps de calcul. Mais il nous semblait préférable d'éviter les valeurs extrêmes (0 : aucunes arêtes, 1 : tous les sommets sont reliés).\\
-Au final, par plaisir de randomisation, il a été décidé de générer aléatoirement pour chaque graphe un \begin{it}n\end{it} entre 5 et 10, et un \begin{it}r\end{it} entre 0.4 et 1.0 (ces valeurs étant des constantes facilement modifiables).
+Au final, par plaisir de randomisation, il a été décidé de générer aléatoirement pour chaque graphe un \begin{it}n\end{it} entre 5 et 10, et un \begin{it}r\end{it} entre 0,4 et 1,0 (ces valeurs étant des constantes facilement modifiables).
+
+\subsection{Améliorations possibles}
+
+\begin{itemize}
+ \item Fonction de génération couvrant plus de types de graphes
+ \item Graphique de la position relative des itérations ``gagnantes'' pour chaque test (information déjà présente dans les instances de \begin{it}TestResult\end{it}, il reste ``seulement'' à l'afficher).
+ \item En plus des valeurs moyennes, calculer les variances et les valeurs maximales des grandeurs mesurées.
+\end{itemize}
+
 
 \subsection{Code source complet}
+Le code a normalement été fourni avec le présent rapport. Il est aussi disponible sur GitHub :\\
+\url{https://github.com/BafAltom/info-f413-random-mincut}
 \fontfamily{pcr}
 \lstinputlisting[language=Python]{../main.py}
 \fontfamily{}
