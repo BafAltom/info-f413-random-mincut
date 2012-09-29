@@ -4,13 +4,17 @@
 \usepackage{color}
 \usepackage{url}
 
+\definecolor{grey}{rgb}{0.9,0.9,0.9}
+
 \lstset{
 language=Python,
-basicstyle=\footnotesize,
+basicstyle=\footnotesize\fontfamily{pcr},
+backgroundcolor=\color{grey},
 numbers=left,
 numberstyle=\tiny,
 numbersep=5pt,
-tabsize=1,
+showstringspaces=false,
+tabsize=3,
 breaklines=true
 }
 
@@ -19,47 +23,44 @@ breaklines=true
 \author{Thomas Chapeaux}
 
 \begin{document}
-
+\sloppy
 \maketitle
 
 \section{Présentation}
 
-\paragraph{}
 L'algorithme de 
 Karger\footnote{Réf. [1]}
 est un algorithme probabiliste permettant d'estimer une coupe minimale d'un graphe,
 basé sur la contraction d'arêtes choisies aléatoirement.
 
-\paragraph{}
 Au cours, il a été vu que cet algorithme a une probabilité de succès (c'est-à-dire de trouver effectivement une coupe minimale) strictement supérieure à
 \begin{math} \frac{2}{n(n-1)} \end{math}.
 Cette borne inférieure peut être améliorée jusqu'à
 \begin{math} 1- \frac{1}{n^{2}} \end{math} en exécutant
 \begin{math} n(n-1)\log{n} \end{math} itérations de l'algorithme et en gardant le meilleur résultat (la plus petite valeur trouvée).
 
-\paragraph{}
 Ce document présente une implémentation de l'algorithme en Python et tente de vérifier les valeurs trouvées au cours.
 
 \section{Implémentation}
 
 \subsection{Languages et bibliothèque}
-\paragraph{}
 L'algorithme a été implémenté en Python 2.7 à l'aide de la bibliothèque
 igraph\footnote{http://igraph.sourceforge.net}.
 Cette bibliothèque permet de générer des graphes aléatoirement via une méthode
 géométrique\footnote{Réf. [2]}
 et propose une méthode pour trouver la coupé minimale d'un graphe, ce qui permettra de juger de la qualité des valeurs trouvées par notre algorithme.
-\paragraph{}
+
 Python a surtout été choisi par préférence personnelle, mais également pour son efficacité lors de projets de taille raisonnable comme celui-ci.
 
 \subsection{Implémentation de l'algorithme}
 \subsubsection{Une itération}
-\paragraph{} Lors de la contraction d'une arête A, chaque autre arête connectée à la destination de A est redirigée vers la source de
+Lors de la contraction d'une arête A, chaque autre arête connectée à la destination de A est redirigée vers la source de
 A\footnote{Le graphe étant non dirigé, on parle de source et de destination du point de vue de l'implémentation dans igraph},
 et toutes les arêtes ayant la même source et la même destination que A (donc A également) sont supprimées.
-\begin{lstlisting}
+\begin{lstlisting}[language=Python]
+# g is an instance of Graph()
 while (graph.vcount() > 2):
-	edge_list = graph.get_edgelist()
+	edge_list = g.get_edgelist()
 	rand_edge_id = random.randint(0,g.ecount()-1)
 	chosen_edge = edge_list[rand_edge_id]
 	chosen_edge_source = chosen_edge[0]
@@ -67,22 +68,72 @@ while (graph.vcount() > 2):
 	for e in edge_list:
 		if (e[0] == chosen_edge_target or e[1] == chosen_edge_target):
 			if (e[0] == chosen_edge_target and e[1] != chosen_edge_source):
-				graph.add_edge(chosen_edge_source, e[1])
+				g.add_edge(chosen_edge_source, e[1])
 			elif (e[1] == chosen_edge_target and e[0] != chosen_edge_source):
-				graph.add_edge(e[0], chosen_edge_source)
+				g.add_edge(e[0], chosen_edge_source)
 			edge_id = graph.get_eid(e[0], e[1])
-			graph.delete_edges(edge_id)
+			g.delete_edges(edge_id)
 
-	assert(graph.degree(chosen_edge_target) == 0)
-	graph.delete_vertices(chosen_edge_target)
+	assert(g.degree(chosen_edge_target) == 0)
+	g.delete_vertices(chosen_edge_target)
 \end{lstlisting}
+
 \subsubsection{Algorithme complet}
-\paragraph{}
+On a choisi de faire par défaut le nombre d'itérations trouvé en cours pour avoir une probabilité de succès de
+\begin{math} 1-\frac{1}{n^{2}} \end{math}
+mais celui-ci peut être contrôlé en modifiant le paramètre CONFIDENCE\_FACTOR pour faire moins d'itérations (plus grand facteur de confiance) ou plus (plus petit).
+\begin{lstlisting}
+number_of_vertices = graph.vcount()
+best_mincut_value = graph.ecount() + 1 # borne superieure
+required_nbr_iter = int(number_of_vertices*(number_of_vertices-1)*math.log(number_of_vertices))
+nbr_iter = required_nbr_iter/CONFIDENCE_FACTOR
+for i in range(nbr_iter):
+	g_temp = g.copy()
+	result = random_mincut_one_instance(g_temp)
+	if (result < best_mincut_value):
+		best_mincut_value = result
+\end{lstlisting}
 
+\subsection{Outil d'analyse}
+\subsubsection{Collecte de données}
+Le code va tester un certain nombre de graphes différents (générés aléatoirement). Lors de l'application de l'algorithme complet sur un graphe, certaines données sont collectées pour pouvoir en tirer des statistiques (voir plus loin).
+\begin{lstlisting}
+class TestResult:
+	def __init__(self, graph):
+		#self.graph = graph # not used
+		self.number_of_vertices = graph.vcount()
+		self.number_of_edges = graph.ecount()
+		self.number_of_iterations = None
+		self.improving_iterations = []
+		self.improved_value = []
+		self.found_value = None
+		self.correct_value = None
 
+	def consistencyCheck(self):
+		assert(len(self.improving_iterations)==len(self.improved_value))
+		assert(self.found_value != None)
+		assert(self.correct_value != None)
+\end{lstlisting}
+Une instance de cette classe par graphe testé est générée par le code pendant l'exécution de l'algorithme.
+On remarquera qu'on enregistre les itérations qui ont augmenté le résultat (improving\_iterations) ainsi que la valeur correspondante (improved\_values)
+
+\subsubsection{Analyse des données}
+Une fois tous les tests exécutés, le code tire les statistiques suivantes de tous les TestResult générés :
+\begin{itemize}
+ \item Nombre de tests échoués (où une valeur trop grande a été trouvée pour la coupe minimale).
+ \item Écart moyen avec la véritable valeur de coupe minimale.
+ \item Proportions d'itérations ``inutiles'' (lorsque la valeur exacte avait déjà été trouvée)
+ \item Itération ``utile'' la plus lointaine
 \end{itemize}
 
-
+Ces résultats sont ensuite affichés de la manière suivante :
+\begin{lstlisting}[language=]
+confidence factor: 10
+failures : 34 = 0.03% of tests
+...with an average of 1.32 absolute error (failures were removed from the following stats)
+Three latest useful iteration (relative to total #iter) : 0.91, 0.9, 0.8
+Proportion of useful work : 0.15 (0.02 without confidence factor)
+\end{lstlisting}
 
 
 \section {Discussion}
@@ -95,11 +146,6 @@ while (graph.vcount() > 2):
 \end{itemize}
 
 
-\section{Annexes}
-
-\subsection{Code source complet}
+\section{Annexe : code source}
 \lstinputlisting[language=Python]{../main.py}
-\subsection{Exemple d'exécution}
-ttt
-
 \end{document}

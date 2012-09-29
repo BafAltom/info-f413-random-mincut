@@ -11,10 +11,10 @@ random.seed()
 # Nombre de graphes qui vont être testés
 NUMBER_OF_TESTS = 1000
 # Proportion d'itérations qui ne vont pas être effectuées (par rapport à la borne minimale vue au cours)
-CONFIDENCE_FACTOR = 2 # def: 5 
+CONFIDENCE_FACTOR = 10 # def: 5 
 # Bornes min/max du nombre de sommets de chaque graphe
-VERTICES_NB_MIN = 6 # def: 5 
-VERTICES_NB_MAX = 6 # def: 10
+VERTICES_NB_MIN = 5 # def: 5 
+VERTICES_NB_MAX = 10 # def: 10
 # Borne min/max du radius GRG de chaque graphe (une plus grande valeur signifie plus d'arêtes)
 GRG_RADIUS_MIN = 0.4 # def: 0.4
 GRG_RADIUS_MAX = 0.9 # def: 0.9
@@ -31,18 +31,21 @@ class TestResult: # Classe stockant un résumé de l'exécution d'un test
 		self.number_of_edges = graph.ecount()
 		self.number_of_iterations = None
 		self.improving_iterations = []
-		self.improved_value = []
+		self.improved_values = []
 		self.found_value = None
 		self.correct_value = None
 
-	def __str__(self):
-		assert(len(self.improving_iterations) == len(self.improved_value))
+	def consistencyCheck(self):
+		assert(len(self.improving_iterations) == len(self.improved_values))
 		assert(self.found_value != None)
 		assert(self.correct_value != None)
+
+	def __str__(self):
+		self.consistencyCheck()
 		s = "Test with a graph of " + str(self.number_of_vertices) + " verticles and " + str(self.number_of_edges) + " edges.\n"
 		s += "Used " + str(self.number_of_iterations) + " iterations.\n"
 		for i in range(len(self.improving_iterations)):
-			s += "- Found value : " + str(self.improved_value[i]) + " at iteration " + str(self.improving_iterations[i]) + "\n"
+			s += "- Found value : " + str(self.improved_values[i]) + " at iteration " + str(self.improving_iterations[i]) + "\n"
 		s += "Final value : " + str(self.found_value) + "\n"
 		s += "Correct value : " + str(self.correct_value) + "\n"
 		return s
@@ -79,7 +82,7 @@ def random_mincut_all(graph, myTestResult):
 		if (result < best_mincut_value):
 			best_mincut_value = result
 			myTestResult.improving_iterations.append(i)
-			myTestResult.improved_value.append(best_mincut_value)
+			myTestResult.improved_values.append(best_mincut_value)
 
 	myTestResult.found_value = best_mincut_value
 	myTestResult.correct_value = int(g.mincut().value)
@@ -90,6 +93,9 @@ def generate_random_connex_graph(number_of_vertices, GRG_radius):
 	while (g.cohesion() == 0):
 		g = Graph.GRG(number_of_vertices,GRG_radius)
 	return g
+
+def strRound2(aFloat):
+	return str(round(aFloat,2))
 
 testResults = []
 for i in range(NUMBER_OF_TESTS):
@@ -102,9 +108,6 @@ for i in range(NUMBER_OF_TESTS):
 	random_mincut_all(g, result)
 	testResults.append(result)
 
-def strRound2(aFloat):
-	return str(round(aFloat,2))
-
 # compute some statistics on testResults
 current_prop_sum = 0
 current_failure_sum = 0
@@ -113,10 +116,11 @@ current_max_useful = 0
 current_max_useful_2 = 0
 current_max_useful_3 = 0
 for tr in testResults:
+	tr.consistencyCheck()
 	#failure count and value
 	if(tr.found_value != tr.correct_value):
 		if (DISPLAY_FAILURES):
-			print "-----------------------------------------------------------"
+			print "-----------------------"
 			print "Failure :"
 			print tr
 		current_failure_sum += 1
@@ -135,9 +139,9 @@ for tr in testResults:
 	proportion_of_useful_work = last_useful_iteration_abs/float(tr.number_of_iterations)
 	current_prop_sum += proportion_of_useful_work
 prop_average = current_prop_sum/len(testResults)
-print "-----------------------------------------------------------"
+print "------------------------"
 print "confidence factor: " + str(CONFIDENCE_FACTOR)
 print "failures : " + str(current_failure_sum) + " = " + strRound2(current_failure_sum/float(NUMBER_OF_TESTS)) + "% of tests"
-if (current_failure_sum > 0): print "...with an average of " + strRound2(current_failure_value/float(current_failure_sum)) + " absolute error (failures were removed from following stats)"
+if (current_failure_sum > 0): print "...with an average of " + strRound2(current_failure_value/float(current_failure_sum)) + " absolute error (failures were removed from the following stats)"
 print "Three latest useful iteration (relative to total #iter) : " + strRound2(current_max_useful) + ", " + strRound2(current_max_useful_2) + ", " + strRound2(current_max_useful_3)
 print "Proportion of useful work : " + strRound2(prop_average) + " (" + strRound2(prop_average/CONFIDENCE_FACTOR) + " without confidence factor)"
