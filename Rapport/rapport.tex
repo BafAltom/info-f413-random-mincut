@@ -31,15 +31,15 @@ breaklines=true
 L'algorithme de 
 Karger\footnote{Réf. [1]}
 est un algorithme probabiliste permettant d'estimer une coupe minimale d'un graphe,
-basé sur la contraction d'arêtes choisies aléatoirement.
+basé sur la contraction d'arêtes choisies aléatoirement.\\
 
 Au cours, il a été vu que cet algorithme a une probabilité de succès (c'est-à-dire de trouver effectivement une coupe minimale) strictement supérieure à
 \begin{math} \frac{2}{n(n-1)} \end{math}.
 Cette borne inférieure peut être améliorée jusqu'à
 \begin{math} 1- \frac{1}{n^{2}} \end{math} en exécutant
-\begin{math} n(n-1)\log{n} \end{math} itérations de l'algorithme et en gardant le meilleur résultat (la plus petite valeur trouvée).
+\begin{math} n(n-1)\log{n} \end{math} itérations de l'algorithme et en gardant le meilleur résultat (la plus petite valeur trouvée).\\
 
-Ce document présente une implémentation de l'algorithme en Python et tente de vérifier les valeurs trouvées au cours.
+Ce document présente une implémentation de l'algorithme en Python et tente de vérifier les valeurs trouvées au cours.\\
 
 \section{Implémentation}
 
@@ -47,16 +47,17 @@ Ce document présente une implémentation de l'algorithme en Python et tente de 
 L'algorithme a été implémenté en Python 2.7 à l'aide de la bibliothèque
 igraph\footnote{http://igraph.sourceforge.net}.
 Cette bibliothèque permet de générer des graphes aléatoirement via une méthode
-géométrique\footnote{Réf. [2]}
-et propose une méthode pour trouver la coupé minimale d'un graphe, ce qui permettra de juger de la qualité des valeurs trouvées par notre algorithme.
+géométrique\footnote{Réf. [2] et Annexe 1}
+et propose une méthode pour trouver la coupé minimale d'un graphe, ce qui permettra de juger de la qualité des valeurs trouvées par notre algorithme.\\
 
-Python a surtout été choisi par préférence personnelle, mais également pour son efficacité lors de projets de taille raisonnable comme celui-ci.
+Python a surtout été choisi par préférence personnelle, mais également pour son efficacité lors de projets de taille raisonnable comme celui-ci.\\
 
 \subsection{Implémentation de l'algorithme}
 \subsubsection{Une itération}
 Lors de la contraction d'une arête A, chaque autre arête connectée à la destination de A est redirigée vers la source de
-A\footnote{Le graphe étant non dirigé, on parle de source et de destination du point de vue de l'implémentation dans igraph},
+A\footnote{Le graphe étant non dirigé, on parle de source et de destination seulement du point de vue de l'implémentation dans igraph.},
 et toutes les arêtes ayant la même source et la même destination que A (donc A également) sont supprimées.
+\fontfamily{pcr}
 \begin{lstlisting}[language=Python]
 # g is an instance of Graph()
 while (graph.vcount() > 2):
@@ -77,11 +78,16 @@ while (graph.vcount() > 2):
 	assert(g.degree(chosen_edge_target) == 0)
 	g.delete_vertices(chosen_edge_target)
 \end{lstlisting}
+\fontfamily{}
 
 \subsubsection{Algorithme complet}
 On a choisi de faire par défaut le nombre d'itérations trouvé en cours pour avoir une probabilité de succès de
 \begin{math} 1-\frac{1}{n^{2}} \end{math}
-mais celui-ci peut être contrôlé en modifiant le paramètre CONFIDENCE\_FACTOR pour faire moins d'itérations (plus grand facteur de confiance) ou plus (plus petit).
+mais celui-ci peut être contrôlé en modifiant le paramètre
+\begin{it}CONFIDENCE\_FACTOR\end{it}
+pour faire moins d'itérations (plus grand facteur de confiance) ou plus (plus petit).
+
+\fontfamily{pcr}
 \begin{lstlisting}
 number_of_vertices = graph.vcount()
 best_mincut_value = graph.ecount() + 1 # borne superieure
@@ -93,10 +99,12 @@ for i in range(nbr_iter):
 	if (result < best_mincut_value):
 		best_mincut_value = result
 \end{lstlisting}
+\fontfamily{}
 
 \subsection{Outil d'analyse}
 \subsubsection{Collecte de données}
 Le code va tester un certain nombre de graphes différents (générés aléatoirement). Lors de l'application de l'algorithme complet sur un graphe, certaines données sont collectées pour pouvoir en tirer des statistiques (voir plus loin).
+\fontfamily{pcr}
 \begin{lstlisting}
 class TestResult:
 	def __init__(self, graph):
@@ -114,11 +122,17 @@ class TestResult:
 		assert(self.found_value != None)
 		assert(self.correct_value != None)
 \end{lstlisting}
+\fontfamily{}
 Une instance de cette classe par graphe testé est générée par le code pendant l'exécution de l'algorithme.
-On remarquera qu'on enregistre les itérations qui ont augmenté le résultat (improving\_iterations) ainsi que la valeur correspondante (improved\_values)
+On remarquera qu'on enregistre les itérations qui ont augmenté le résultat
+(\begin{it}improving\_iterations\end{it})
+ainsi que la valeur correspondante
+(\begin{it}improved\_values\end{it})
 
 \subsubsection{Analyse des données}
-Une fois tous les tests exécutés, le code tire les statistiques suivantes de tous les TestResult générés :
+Une fois tous les tests exécutés, le code tire les statistiques suivantes de tous les
+\begin{it}TestResult\end{it}
+générés :
 \begin{itemize}
  \item Nombre de tests échoués (où une valeur trop grande a été trouvée pour la coupe minimale).
  \item Écart moyen avec la véritable valeur de coupe minimale.
@@ -127,25 +141,101 @@ Une fois tous les tests exécutés, le code tire les statistiques suivantes de t
 \end{itemize}
 
 Ces résultats sont ensuite affichés de la manière suivante :
+\fontfamily{pcr}
 \begin{lstlisting}[language=]
 confidence factor: 10
-failures : 34 = 0.03% of tests
-...with an average of 1.32 absolute error (failures were removed from the following stats)
-Three latest useful iteration (relative to total #iter) : 0.91, 0.9, 0.8
+failures : 34 = 3.4% of tests
+...with an average of 1.32 absolute error
+(Failed tests were removed from the following stats)
+Three latest useful iterations (relative to total #iter) : 0.91, 0.9, 0.8
 Proportion of useful work : 0.15 (0.02 without confidence factor)
 \end{lstlisting}
-
+\fontfamily{}
 
 \section {Discussion}
+
+Nous avions démontré (au cours) qu'en effectuant
+\begin{math} n(n-1)\log{n} \end{math}
+itérations, on était certain d'avoir un taux d'échec inférieur à
+\begin{math}\frac{1}{n^{2}} \end{math}. Voyons comment ce résultat se traduit dans les tests.\\
+
+Après une série de 1000 tests avec ce nombre d'itérations sur des graphes générés aléatoirement ayant au moins 5 sommets, nous devrions observer au plus 
+\begin{math} \frac{1000}{n^{2}} = 40 \end{math}
+erreurs. Le résultat est le suivant :
+\fontfamily{pcr}
+\begin{lstlisting}[language=]
+confidence factor: 1
+failures : 0 = 0.0% of tests
+Three latest useful iterations (relative to total #iter) : 0.4, 0.22, 0.19
+Proportion of useful work : 0.02 (0.02 without confidence factor)
+\end{lstlisting}
+\fontfamily{}
+On peut donc observer que la borne supérieure que nous avons trouvé est non seulement correcte, mais aussi fort
+exagérée\footnote{En tout cas pour l'ensemble des graphes accessibles par notre fonction de génération aléatoire, qui n'est bien sûr qu'un sous-ensemble qu'on espère représentatif de tous les graphes possibles.}.
+Sur les 1000 tests, aucun n'a échoué et l'itération trouvant la bonne valeur la plus lointaine n'était qu'à 40\% de notre borne supérieure !\\
+
+En fait, même en répétant plusieurs fois des séries de 1000 ou 10.000 tests, nous ne sommes arrivés que rarement à produire un test qui trouve une valeur erronée avec le nombre d'itérations.
+D'où l'ajout du paramètre \begin{it}CONFIDENCE\_FACTOR\end{it}, qui réduit le nombre d'itérations effectuées par le programme.\\
+
+Série de 10.000 tests (donc 400 erreurs attendues si on respecte la borne supérieure), avec un facteur de confiance de 10 :
+\fontfamily{pcr}
+\begin{lstlisting}[language=]
+confidence factor: 10
+failures : 474 = 4.7% of tests
+...with an average of 1.22 absolute error
+(Failed tests were removed from the following stats)
+Three latest useful iterations (relative to total #iter) : 0.95, 0.93, 0.85
+Proportion of useful work : 0.15 (0.01 without confidence factor)
+\end{lstlisting}
+\fontfamily{}
+
+Cette fois, en faisant dix fois moins de calculs que prévus, on arrive quand même à respecter (ou presque) le taux de réussite qu'on s'était imposé. De plus, l'erreur commise n'est en moyenne pas très importante, ce qui pourrait être suffisant pour certaines applications nécessitant un calcul de coupe minimale.\\
+
+On peut tout de même remarquer que, malgré notre facteur de confiance, 85\% des itérations ont été calculées alors que la réponse avait déjà été trouvée. Ceci semble excessif mais est le prix à payer pour avoir une très grande majorité de résultats corrects (ceci peut se voir dans les trois itérations ``gagnantes'' les plus lointaines, qui sont toutes les trois arrivées vers la fin de l'algorithme).\\
+
+Testons maintenant une valeur extrême de confiance (10.000 tests, facteur de confiance 100) :
+\fontfamily{pcr}
+\begin{lstlisting}[language=]
+confidence factor: 100
+failures : 5139 = 51.39% of tests
+...with an average of 2.7 absolute error
+Three latest useful iterations (relative to total #iter) : 0.5, 0.0, 0.0
+Proportion of useful work : 0.03 (0.0 without confidence factor)
+\end{lstlisting}
+\fontfamily{}
+(L'algorithme ne testant qu'une ou deux itérations par graphes, les deux dernières lignes moins significatives)\\
+
+On a maintenant une majorité de résultats erronés (ce qui était attendu vu le facteur de confiance très élevé). Cependant, on peut quand même remarquer que l'erreur moyenne n'est pas si grande que ça (elle est significative, mais pas extravagante). On pourrait imaginer des applications nécessitant souvent d'avoir très rapidement une petite coupe d'un graphe, sans contrainte de minimalité, où l'algorithme de Karger avec un grand facteur de confiance serait parfaitement adapté.
 
 \section{Références}
 
 \begin{itemize}
-  \item Karger, David (1993). "Global Min-cuts in RNC and Other Ramifications of a Simple Mincut Algorithm". Proc. 4th Annual ACM-SIAM Symposium on Discrete Algorithms. [1]
-  \item ``n points are chosen randomly and uniformly inside the unit square and pairs of points closer to each other than a predefined distance d are connected by an edge'' \url{http://hal.elte.hu/~nepusz/development/igraph/tutorial/tutorial.html} [2]
+  \item {[}1] Karger, David (1993). "Global Min-cuts in RNC and Other Ramifications of a Simple Mincut Algorithm". Proc. 4th Annual ACM-SIAM Symposium on Discrete Algorithms.
+  \item {[}2] ``n points are chosen randomly and uniformly inside the unit square and pairs of points closer to each other than a predefined distance d are connected by an edge'' \url{http://hal.elte.hu/~nepusz/development/igraph/tutorial/tutorial.html}
 \end{itemize}
 
 
-\section{Annexe : code source}
+\section{Annexe}
+\subsection{Génération aléatoire de graphes}
+
+Pour avoir des résultats significatifs, il nous a semblé préférable de tester l'algorithme avec des graphes générés aléatoirement plutôt qu'avec des ``cas particuliers'' codés en dur dans le code.\\
+
+L'algorithme utilisé, proposé par la bibliothèque igraph, prend comme paramètres :
+\begin{itemize}
+ \item[n] : le nombre de sommets du graphe
+ \item[r] : un nombre entre 0 et 1
+\end{itemize}
+Il génère le graphe en posant les \begin{it}n\end{it} sommets aléatoirement dans un carré de côté 1, puis en reliant d'une arête les points situés à une distance inférieure à \begin{it}r\end{it}.\\
+
+L'algorithme peut donc générer des graphes non connexes, qui sont des cas triviaux jugés non intéressants car chaque itération de l'algorithme (modifié pour accepter ce cas) renverra la bonne
+valeur avec une probabilité de 1. Il a donc été choisi de détecter les graphes connexes renvoyés par l'algorithme et de demander un nouveau graphe aléatoire dans ce cas.\\
+
+Au cours, on a calculé que l'algorithme de Karger avait une complexité en \begin{math}O(n^{4})\end{math}, il convient donc de choisir un \begin{it}n\end{it} d'une taille raisonnable. Sur notre matériel et pour des séries de 1000 tests, 10 sommets semblent être une borne maximale pour avoir un temps de calcul viable.\\
+Le choix de \begin{it}r\end{it}, qui modifiera surtout le nombre d'arêtes du graphe, semblait avoir moins d'importance sur le temps de calcul. Mais il nous semblait préférable d'éviter les valeurs extrêmes (0 : aucunes arêtes, 1 : tous les sommets sont reliés).\\
+Au final, par plaisir de randomisation, il a été décidé de générer aléatoirement pour chaque graphe un \begin{it}n\end{it} entre 5 et 10, et un \begin{it}r\end{it} entre 0.4 et 1.0 (ces valeurs étant des constantes facilement modifiables).
+
+\subsection{Code source complet}
+\fontfamily{pcr}
 \lstinputlisting[language=Python]{../main.py}
+\fontfamily{}
 \end{document}
