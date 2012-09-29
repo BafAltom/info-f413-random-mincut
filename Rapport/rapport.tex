@@ -1,0 +1,105 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{url}
+
+\lstset{
+language=Python,
+basicstyle=\footnotesize,
+numbers=left,
+numberstyle=\tiny,
+numbersep=5pt,
+tabsize=1,
+breaklines=true
+}
+
+%opening
+\title{INFO-F-413 : Implémentation de l'Algorithme de Karger}
+\author{Thomas Chapeaux}
+
+\begin{document}
+
+\maketitle
+
+\section{Présentation}
+
+\paragraph{}
+L'algorithme de 
+Karger\footnote{Réf. [1]}
+est un algorithme probabiliste permettant d'estimer une coupe minimale d'un graphe,
+basé sur la contraction d'arêtes choisies aléatoirement.
+
+\paragraph{}
+Au cours, il a été vu que cet algorithme a une probabilité de succès (c'est-à-dire de trouver effectivement une coupe minimale) strictement supérieure à
+\begin{math} \frac{2}{n(n-1)} \end{math}.
+Cette borne inférieure peut être améliorée jusqu'à
+\begin{math} 1- \frac{1}{n^{2}} \end{math} en exécutant
+\begin{math} n(n-1)\log{n} \end{math} itérations de l'algorithme et en gardant le meilleur résultat (la plus petite valeur trouvée).
+
+\paragraph{}
+Ce document présente une implémentation de l'algorithme en Python et tente de vérifier les valeurs trouvées au cours.
+
+\section{Implémentation}
+
+\subsection{Languages et bibliothèque}
+\paragraph{}
+L'algorithme a été implémenté en Python 2.7 à l'aide de la bibliothèque
+igraph\footnote{http://igraph.sourceforge.net}.
+Cette bibliothèque permet de générer des graphes aléatoirement via une méthode
+géométrique\footnote{Réf. [2]}
+et propose une méthode pour trouver la coupé minimale d'un graphe, ce qui permettra de juger de la qualité des valeurs trouvées par notre algorithme.
+\paragraph{}
+Python a surtout été choisi par préférence personnelle, mais également pour son efficacité lors de projets de taille raisonnable comme celui-ci.
+
+\subsection{Implémentation de l'algorithme}
+\subsubsection{Une itération}
+\paragraph{} Lors de la contraction d'une arête A, chaque autre arête connectée à la destination de A est redirigée vers la source de
+A\footnote{Le graphe étant non dirigé, on parle de source et de destination du point de vue de l'implémentation dans igraph},
+et toutes les arêtes ayant la même source et la même destination que A (donc A également) sont supprimées.
+\begin{lstlisting}
+while (graph.vcount() > 2):
+	edge_list = graph.get_edgelist()
+	rand_edge_id = random.randint(0,g.ecount()-1)
+	chosen_edge = edge_list[rand_edge_id]
+	chosen_edge_source = chosen_edge[0]
+	chosen_edge_target = chosen_edge[1]
+	for e in edge_list:
+		if (e[0] == chosen_edge_target or e[1] == chosen_edge_target):
+			if (e[0] == chosen_edge_target and e[1] != chosen_edge_source):
+				graph.add_edge(chosen_edge_source, e[1])
+			elif (e[1] == chosen_edge_target and e[0] != chosen_edge_source):
+				graph.add_edge(e[0], chosen_edge_source)
+			edge_id = graph.get_eid(e[0], e[1])
+			graph.delete_edges(edge_id)
+
+	assert(graph.degree(chosen_edge_target) == 0)
+	graph.delete_vertices(chosen_edge_target)
+\end{lstlisting}
+\subsubsection{Algorithme complet}
+\paragraph{}
+
+
+\end{itemize}
+
+
+
+
+\section {Discussion}
+
+\section{Références}
+
+\begin{itemize}
+  \item Karger, David (1993). "Global Min-cuts in RNC and Other Ramifications of a Simple Mincut Algorithm". Proc. 4th Annual ACM-SIAM Symposium on Discrete Algorithms. [1]
+  \item ``n points are chosen randomly and uniformly inside the unit square and pairs of points closer to each other than a predefined distance d are connected by an edge'' \url{http://hal.elte.hu/~nepusz/development/igraph/tutorial/tutorial.html} [2]
+\end{itemize}
+
+
+\section{Annexes}
+
+\subsection{Code source complet}
+\lstinputlisting[language=Python]{../main.py}
+\subsection{Exemple d'exécution}
+ttt
+
+\end{document}

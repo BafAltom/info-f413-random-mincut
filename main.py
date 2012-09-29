@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 from igraph import *
 # igraph: http://igraph.sourceforge.net/
 import random
@@ -5,12 +8,23 @@ import math
 
 random.seed()
 
+# Nombre de graphes qui vont être testés
 NUMBER_OF_TESTS = 1000
-CONFIDENCE_FACTOR = 5 # nice value : 5
+# Proportion d'itérations qui ne vont pas être effectuées (par rapport à la borne minimale vue au cours)
+CONFIDENCE_FACTOR = 2 # def: 5 
+# Bornes min/max du nombre de sommets de chaque graphe
+VERTICES_NB_MIN = 6 # def: 5 
+VERTICES_NB_MAX = 6 # def: 10
+# Borne min/max du radius GRG de chaque graphe (une plus grande valeur signifie plus d'arêtes)
+GRG_RADIUS_MIN = 0.4 # def: 0.4
+GRG_RADIUS_MAX = 0.9 # def: 0.9
+# Utilise (True) ou non (False) les graphes pour lesquels la coupe minimale n'a pas été trouvée dans les statistiques
 REMOVE_FAILED_TESTS_IN_STATS = False
+# Affiche (True) ou non (False) un résumé des tests pour lesquels la coupe minimale n'a pas été trouvée
 DISPLAY_FAILURES = False
 
-class TestResult:
+
+class TestResult: # Classe stockant un résumé de l'exécution d'un test
 	def __init__(self, graph):
 		#self.graph = graph
 		self.number_of_vertices = graph.vcount()
@@ -33,7 +47,7 @@ class TestResult:
 		s += "Correct value : " + str(self.correct_value) + "\n"
 		return s
 
-def random_mincut(g):
+def random_mincut_one_instance(g):
 	while (g.vcount() > 2):
 		edge_list = g.get_edgelist()
 		rand_edge_id = random.randint(0,g.ecount()-1)
@@ -53,7 +67,7 @@ def random_mincut(g):
 		g.delete_vertices(chosen_edge_target)
 	return g.ecount()
 
-def find_mincut(graph, myTestResult):
+def random_mincut_all(graph, myTestResult):
 	number_of_vertices = graph.vcount()
 	best_mincut_value = graph.ecount() + 1 # borne superieure
 	required_nbr_iter = int(number_of_vertices*(number_of_vertices-1)*math.log(number_of_vertices))
@@ -61,7 +75,7 @@ def find_mincut(graph, myTestResult):
 	myTestResult.number_of_iterations = nbr_iter
 	for i in range(nbr_iter):
 		g_temp = g.copy()
-		result = random_mincut(g_temp)
+		result = random_mincut_one_instance(g_temp)
 		if (result < best_mincut_value):
 			best_mincut_value = result
 			myTestResult.improving_iterations.append(i)
@@ -79,13 +93,13 @@ def generate_random_connex_graph(number_of_vertices, GRG_radius):
 
 testResults = []
 for i in range(NUMBER_OF_TESTS):
-	number_of_vertices = random.randint(5,10)
-	GRG_radius = random.randint(40,90)/float(100)
+	number_of_vertices = random.randint(VERTICES_NB_MIN,VERTICES_NB_MAX)
+	GRG_radius = random.randint(GRG_RADIUS_MIN*100,GRG_RADIUS_MAX*100)/float(100)
 	if (NUMBER_OF_TESTS < 1000): print "test " + str(i+1) + " of " + str(NUMBER_OF_TESTS) + "..."
 	elif(((i+1)%(NUMBER_OF_TESTS/10)) == 0): print "test " + str(i+1) + " of " + str(NUMBER_OF_TESTS) + "..."
 	g = generate_random_connex_graph(number_of_vertices, GRG_radius)
 	result = TestResult(g)
-	find_mincut(g, result)
+	random_mincut_all(g, result)
 	testResults.append(result)
 
 def strRound2(aFloat):
@@ -123,6 +137,7 @@ for tr in testResults:
 prop_average = current_prop_sum/len(testResults)
 print "-----------------------------------------------------------"
 print "confidence factor: " + str(CONFIDENCE_FACTOR)
-print "failures : " + str(current_failure_sum) + " = " + strRound2(current_failure_sum/float(NUMBER_OF_TESTS)) + "% of tests with an average of " + strRound2(current_failure_value/float(current_failure_sum)) + " absolute error (failures were removed from following stats)"
+print "failures : " + str(current_failure_sum) + " = " + strRound2(current_failure_sum/float(NUMBER_OF_TESTS)) + "% of tests"
+if (current_failure_sum > 0): print "...with an average of " + strRound2(current_failure_value/float(current_failure_sum)) + " absolute error (failures were removed from following stats)"
 print "Three latest useful iteration (relative to total #iter) : " + strRound2(current_max_useful) + ", " + strRound2(current_max_useful_2) + ", " + strRound2(current_max_useful_3)
 print "Proportion of useful work : " + strRound2(prop_average) + " (" + strRound2(prop_average/CONFIDENCE_FACTOR) + " without confidence factor)"
