@@ -124,5 +124,5 @@ prop_average = current_prop_sum/len(testResults)
 print "-----------------------------------------------------------"
 print "confidence factor: " + str(CONFIDENCE_FACTOR)
 print "failures : " + str(current_failure_sum) + " = " + strRound2(current_failure_sum/float(NUMBER_OF_TESTS)) + "% of tests with an average of " + strRound2(current_failure_value/float(current_failure_sum)) + " absolute error (failures were removed from following stats)"
-print "Three biggest useful iteration # (relative to total #iter) : " + strRound2(current_max_useful) + ", " + strRound2(current_max_useful_2) + ", " + strRound2(current_max_useful_3)
+print "Three latest useful iteration (relative to total #iter) : " + strRound2(current_max_useful) + ", " + strRound2(current_max_useful_2) + ", " + strRound2(current_max_useful_3)
 print "Proportion of useful work : " + strRound2(prop_average) + " (" + strRound2(prop_average/CONFIDENCE_FACTOR) + " without confidence factor)"
