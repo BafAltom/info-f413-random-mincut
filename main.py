@@ -9,9 +9,9 @@ import math
 random.seed()
 
 # Nombre de graphes qui vont être testés
-NUMBER_OF_TESTS = 1000
+NUMBER_OF_TESTS = 100000
 # Proportion d'itérations qui ne vont pas être effectuées (par rapport à la borne minimale vue au cours)
-CONFIDENCE_FACTOR = 1 # def: 5 
+CONFIDENCE_FACTOR = 100 # def: 5 
 # Bornes min/max du nombre de sommets de chaque graphe
 VERTICES_NB_MIN = 5 # def: 5 
 VERTICES_NB_MAX = 10 # def: 10
